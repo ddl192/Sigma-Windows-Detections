@@ -1,0 +1,47 @@
+title: PowerShell Encoded Command
+id: a76fb9b1-a859-428d-b561-ae5175d36980
+description: Detects PowerShell with encoded commands. Might be malicious.
+status: stable
+author: ddl192
+date: 2025-10-18
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+
+logsource:
+  product: windows
+  category: process_creation
+
+detection:
+  selection_event:
+    EventID: 1                       # Sysmon process create
+  selection_powershell:
+    Image|re: (?i)\\(?:powershell|pwsh)(?:\.exe)?$   # powershell.exe or pwsh.exe
+    CommandLine|re: (?i)(?:-noprofile\s+)?(?:-windowstyle\s+hidden\s+)?(?:-enc(?:odedcommand)?|-e)\s+([A-Za-z0-9+/=]{40,})  # -EncodedCommand with long Base64 payload, optional -NoProfile and -WindowStyle Hidden
+  exclusion_parents:
+    ParentImage|re:
+      - '(?i)\\(?:services|taskeng|taskschd|sccm|intune|ansible|jenkins|gitlab-runner)\.exe'
+    ParentCommandLine|re:
+      - '(?i)SCCM|ConfigurationManager|Intune|Ansible|Jenkins|GitLab'
+  condition: selection_event and selection_powershell and not exclusion_parents
+
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+
+falsepositives:
+  - Admin tools using encoded commands
+  - Short base64 strings
+
+notes:
+  - May need tuning for your environment
+
+fields:
+  - Image
+  - CommandLine
+  - ParentImage
+  - ParentCommandLine
+  - ProcessId
+  - ParentProcessId
+  - User
+  - ComputerName

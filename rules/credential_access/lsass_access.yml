@@ -1,0 +1,56 @@
+title: Suspicious LSASS Access
+id: c9b267a7-d058-471b-88b9-68b7f07841d5
+description: Detects processes trying to access LSASS memory. Might be credential dumping.
+status: stable
+author: ddl192
+date: 2025-10-19
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+
+logsource:
+  product: windows
+  service: sysmon
+  category: process_access  # EventID 10: ProcessAccess
+
+detection:
+  selection_target:
+    TargetImage|re: '(?i)\\lsass\.exe$'
+    GrantedAccess:
+      - 16        # QueryInformation
+      - 0x1F0FFF  # Full access
+  selection_system:
+    Image|re:
+      - '(?i)\\svchost\.exe$'
+      - '(?i)\\services\.exe$'
+      - '(?i)\\winlogon\.exe$'
+      - '(?i)\\lsm\.exe$'
+      - '(?i)\\csrss\.exe$'
+  selection_exclusions:
+    ParentImage|re:
+      - '(?i)\\explorer\.exe$'
+      - '(?i)\\taskeng\.exe$'
+      - '(?i)\\powershell\.exe$'
+  condition: selection_target and not selection_system and not selection_exclusions
+
+level: high
+tags:
+  - attack.t1003.001
+
+falsepositives:
+  - Legitimate tools like Procdump
+  - Security scans
+  - Admin scripts
+
+notes:
+  - Needs Sysmon EventID 10
+  - May have false positives
+
+fields:
+  - Image
+  - TargetImage
+  - GrantedAccess
+  - ProcessId
+  - ParentImage
+  - ParentProcessId
+  - User
+  - ComputerName

@@ -1,0 +1,45 @@
+title: Suspicious Command Execution
+id: 00000000-0000-0000-0000-000000000000 # Replace with unique UUID
+status: experimental  # Rule status: stable, testing, or experimental
+description: Brief description of what this rule detects
+author: Your Name
+date: 2025-01-01
+
+# Severity level of the detection
+level: high  # Options: low, medium, high, critical
+
+# MITRE ATT&CK categories associated with this detection
+tags:
+  - attack.execution          # Choose appropriate MITRE ATT&CK technique
+  - attack.t1059.001          # Example: PowerShell technique
+
+# Log source information
+logsource:
+  product: windows           # OS or system generating the logs (windows, linux, network, cloud)
+  service: security          # Specific service or log type (security, sysmon, auth, etc.)
+  category: process_creation # Logical category of the events
+
+# Detection logic
+detection:
+  selection:
+    # Define your detection criteria here
+    CommandLine|contains:
+      - "suspicious_command"
+      - "malicious_pattern"
+  condition: selection
+
+# Fields to include in alert output for easier investigation
+fields:
+  - CommandLine
+  - ParentImage
+  - User
+  - ComputerName
+
+# Known false positives to reduce alert noise
+falsepositives:
+  - Legitimate administrative scripts
+  - Scheduled tasks
+
+# References to MITRE ATT&CK or other documentation for context
+references:
+  - https://attack.mitre.org/techniques/T1059/

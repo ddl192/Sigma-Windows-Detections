@@ -1,0 +1,49 @@
+title: RDP from Non-Whitelisted IP
+id: bfc9dbd8-f50f-46c4-944d-dfb340c9eaf2
+description: Detects RDP logons from IPs not in whitelist. Could be lateral movement.
+status: stable
+author: ddl192
+date: 2025-10-19
+references:
+  - https://attack.mitre.org/techniques/T1021/001/
+
+logsource:
+  product: windows
+  service: security
+  category: authentication  # Windows Security Event Log
+
+detection:
+  selection_rdp_success:
+    EventID: 4624                    # Successful logon
+    LogonType: 10                    # Remote Interactive (RDP)
+    TargetUserName|re: .+
+    WorkstationName|re: .+
+  selection_whitelist_cidr:
+    IpAddress|cidr:                  # Private network range
+      - 10.0.0.0/8
+      - 192.168.0.0/16
+  selection_whitelist_ip:
+    IpAddress:
+      - 203.0.113.1                   # Example whitelisted IP
+  condition: selection_rdp_success and not (selection_whitelist_cidr or selection_whitelist_ip)
+level: high
+tags:
+  - attack.t1021.001
+falsepositives:
+  - VPN users
+  - Remote workers
+  - External admins
+
+notes:
+  - Update whitelist for your environment
+  - May have many false positives
+
+fields:
+  - EventID
+  - LogonType
+  - TargetUserName
+  - WorkstationName
+  - IpAddress
+  - User
+  - ComputerName
+  - LogonTime
